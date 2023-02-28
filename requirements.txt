@@ -1,0 +1,8 @@
+scikit-learn
+numpy
+scikit-image
+opencv-python
+imblearn
+xgboost
+tqdm
+umap-learn
