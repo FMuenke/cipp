@@ -1,5 +1,6 @@
 import argparse
 import os
+import cv2
 import numpy as np
 from tqdm import tqdm
 
@@ -43,6 +44,9 @@ def main(args_):
     vis_fol = Folder(os.path.join(mf, "overlays"))
     vis_fol.check_n_make_dir(clean=True)
 
+    exp_fol = Folder(os.path.join(mf, "explained"))
+    exp_fol.check_n_make_dir(clean=True)
+
     d_set = SegmentationDataSet(df, color_coding)
     t_set = d_set.load()
 
@@ -50,6 +54,8 @@ def main(args_):
     print("Processing Images...")
     for tid in tqdm(t_set):
         cls_map = model.predict(t_set[tid].load_x())
+        explain = model.explain(t_set[tid].load_x())
+        cv2.imwrite(os.path.join(exp_fol.path(), "{}.jpg".format(tid)), explain)
         color_map = convert_cls_to_color(cls_map, color_coding, unsupervised=us)
         t_set[tid].write_result(res_fol.path(), color_map)
         if not us:

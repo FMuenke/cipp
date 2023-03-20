@@ -47,17 +47,19 @@ def main(args_):
     df = args_.dataset_folder
     mf = args_.model_folder
 
-    x = InputLayer("IN", features_to_use="gray-color", height=128, width=128)
+    x = InputLayer("IN", features_to_use="gray-color", height=512, width=512)
     x = CIPPLayer(x, "SIMPLE", operations=[
-        # "blurring",
-        # "closing",
+        "blurring",
         "invert",
-        # "edge",
-        ["edge", "threshold"],
-        # "erode",
-        "select_sphere",
-        "remove_small_objects",
-        # "remove_big_objects"
+        # "crop",
+        "detect_blob",
+        # "detect_blob",
+        # "threshold",
+        # "select_sphere",
+        # "remove_small_objects",
+        # "remove_big_objects",
+        # "select_solid",
+        # "crop",
     ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
     model = Model(graph=x)
 

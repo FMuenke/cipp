@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+import cv2
 from conventional_image_processing_pipeline.image_processing_operations import LIST_OF_OPERATIONS
 from conventional_image_processing_pipeline.layer_operations import resize
 
@@ -97,6 +98,25 @@ class Pipeline:
         for op in self.operations:
             x_img = op.inference(x_img)
         return x_img
+
+    def explain(self, x_img):
+        if len(x_img.shape) == 3:
+            x_img = x_img[:, :, [self.selected_layer]]
+
+        if np.max(x_img) <= 1 and np.min(x_img) >= 0:
+            pass
+        else:
+            x_img = x_img / 255
+        h, w = x_img.shape[:2]
+        x_img = np.reshape(x_img, (h, w))
+        border = np.ones((h, 4))
+        explained_image = [np.copy(x_img), border]
+        for op in self.operations:
+            x_img = op.inference(np.copy(x_img))
+            explained_image.append(np.copy(x_img))
+            explained_image.append(border)
+        explained_image = 255 * np.concatenate(explained_image, axis=1)
+        return explained_image
 
     def eval(self, x_img, y_img):
         p_img = self.inference(x_img)

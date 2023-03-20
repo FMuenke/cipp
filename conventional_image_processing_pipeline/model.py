@@ -38,6 +38,9 @@ class Model:
     def predict(self, data):
         return self.graph.predict(data)
 
+    def explain(self, data):
+        return self.graph.explain(data)
+
     def load_layer(self, model_folder):
         opt = load_dict(os.path.join(model_folder, "opt.json"))
         if "layer_type" not in opt:

@@ -4,13 +4,12 @@ import numpy as np
 from tqdm import tqdm
 
 from data_structure.segmentation_data_set import SegmentationDataSet
-from structured_classifier.model import Model
+from conventional_image_processing_pipeline.model import Model
 from data_structure.stats_handler import StatsHandler
 from data_structure.folder import Folder
 
-from structured_classifier import InputLayer
-from structured_classifier import CIPPLayer
-from structured_classifier import PixelLayer
+from conventional_image_processing_pipeline import InputLayer
+from conventional_image_processing_pipeline import CIPPLayer
 
 from utils.utils import save_dict, load_dict
 
@@ -67,6 +66,19 @@ def model_cipp_watershed():
     return model
 
 
+def model_crack():
+    x = InputLayer("IN", features_to_use=["gray-color"], initial_down_scale=1)
+    x = CIPPLayer(x, "SIMPLE", operations=[
+        "blurring",
+        "top_clipping",
+        "invert",
+        ["threshold", "edge"],
+        "remove_small_objects",
+    ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
+    model = Model(graph=x)
+    return model
+
+
 def model_v4():
     x = InputLayer("IN", features_to_use=["RGB-color"], initial_down_scale=1)
     x = CIPPLayer(x, "SIMPLE", operations=[
@@ -78,9 +90,28 @@ def model_v4():
     return model
 
 
-def model_px():
-    x = InputLayer("IN", features_to_use=["RGB-lm"], initial_down_scale=1)
-    x = PixelLayer(x, "PX", clf="rf")
+def model_spheres_v1():
+    x = InputLayer("IN", features_to_use="gray-color", height=128, width=128)
+    x = CIPPLayer(x, "SIMPLE", operations=[
+        "top_clipping",
+        "threshold",
+        "remove_small_objects",
+        "select_solid",
+        "crop",
+    ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
+    return Model(graph=x)
+
+
+def model_spheres():
+    x = InputLayer("IN", features_to_use="gray-color", height=128, width=128)
+    x = CIPPLayer(x, "SIMPLE", operations=[
+        "invert",
+        "threshold",
+        "crop",
+        "remove_small_objects",
+        "select_sphere",
+        "select_solid",
+    ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
     model = Model(graph=x)
     return model
 
@@ -112,7 +143,7 @@ def run_training(df, mf, number_of_tags):
     train_test_ratio = 0.5
 
     # DEFINE MODEL ###############
-    model = model_cipp()
+    model = model_crack()
     ##############################
 
     d_set = SegmentationDataSet(df, color_coding)
@@ -161,10 +192,10 @@ def run_test(df, mf, us):
     for tid in tqdm(t_set):
         cls_map = model.predict(t_set[tid].load_x())
         color_map = convert_cls_to_color(cls_map, color_coding, unsupervised=us)
-        t_set[tid].write_result(res_fol.path(), color_map)
+        # t_set[tid].write_result(res_fol.path(), color_map)
         if not us:
             t_set[tid].eval(color_map, sh)
-        t_set[tid].visualize_result(vis_fol.path(), color_map)
+        # t_set[tid].visualize_result(vis_fol.path(), color_map)
 
     sh.eval()
     sh.show()
@@ -178,7 +209,7 @@ def main(args_):
     if not os.path.isdir(mf):
         os.mkdir(mf)
 
-    number_of_images = [1, 2, 4, 8, 16, 32, 64, 128]
+    number_of_images = [1, 2]  # , 4, 8, 16, 32, 64, 128
     iterations = 20
 
     for n in number_of_images:

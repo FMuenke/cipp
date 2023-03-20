@@ -50,6 +50,9 @@ class InputLayer:
     def load(self, model_path):
         pass
 
+    def explain(self, image):
+        return self.inference(image)
+
     def inference(self, image, interpolation="nearest"):
         if self.height is not None and self.width is not None:
             image = cv2.resize(image, (self.width, self.height), interpolation=cv2.INTER_CUBIC)

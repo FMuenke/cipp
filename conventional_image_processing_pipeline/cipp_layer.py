@@ -73,6 +73,11 @@ class CIPPLayer:
         y_img = np.concatenate([x_img_pass, y_img], axis=2)
         return y_img
 
+    def explain(self, x_input):
+        x_img, x_pass = self.get_features(x_input)
+        y_img = self.pipeline.explain(np.copy(x_img))
+        return y_img
+
     def predict(self, x_input):
         x_img, x_pass = self.get_features(x_input)
         o_height, o_width = x_pass.shape[:2]
