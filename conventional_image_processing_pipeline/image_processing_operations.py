@@ -1,9 +1,3 @@
-import numpy as np
-import cv2
-from skimage.filters import frangi
-from skimage.feature import canny
-from skimage.segmentation import watershed
-from conventional_image_processing_pipeline.layer_operations import normalize, resize
 from conventional_image_processing_pipeline.image_operations import *
 
 
@@ -49,6 +43,7 @@ LIST_OF_OPERATIONS = [
     TopClipping,
     TopClippingPercentile,
     BottomClipping,
+    BottomClippingPercentile,
     CannyEdgeDetector,
     LocalNormalization,
     RemoveSmallObjects,

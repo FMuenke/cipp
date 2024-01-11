@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from data_structure.segmentation_data_set import SegmentationDataSet
 from conventional_image_processing_pipeline.model import Model
-from data_structure.stats_handler import StatsHandler
+from data_structure.model_statistics import ModelStatistics
 from data_structure.folder import Folder
 
 from conventional_image_processing_pipeline import InputLayer
@@ -28,14 +28,14 @@ def model_v1():
 
 
 def model_cipp():
-    x = InputLayer("IN", features_to_use="RGB-color", initial_down_scale=1)
+    x = InputLayer("IN", features_to_use="gray-color", width=128, height=128)
     x = CIPPLayer(x, "CIPP", operations=[
         "blurring",
         "invert",
         ["threshold", "threshold_otsu", "edge"],
         "closing",
         "erode",
-    ], selected_layer=[1], optimizer="grid_search", use_multiprocessing=True)
+    ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
     model = Model(graph=x)
     return model
 
@@ -143,7 +143,7 @@ def run_training(df, mf, number_of_tags):
     train_test_ratio = 0.5
 
     # DEFINE MODEL ###############
-    model = model_crack()
+    model = model_cipp()
     ##############################
 
     d_set = SegmentationDataSet(df, color_coding)
@@ -187,7 +187,7 @@ def run_test(df, mf, us):
     d_set = SegmentationDataSet(df, color_coding)
     t_set = d_set.load()
 
-    sh = StatsHandler(color_coding)
+    sh = ModelStatistics(color_coding)
     print("Processing Images...")
     for tid in tqdm(t_set):
         cls_map = model.predict(t_set[tid].load_x())
@@ -209,7 +209,7 @@ def main(args_):
     if not os.path.isdir(mf):
         os.mkdir(mf)
 
-    number_of_images = [1, 2]  # , 4, 8, 16, 32, 64, 128
+    number_of_images = [2, 4, 8, 16]  # , 4, 8, 16, 32, 64, 128
     iterations = 20
 
     for n in number_of_images:

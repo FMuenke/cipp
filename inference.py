@@ -9,7 +9,7 @@ from data_structure.segmentation_data_set import SegmentationDataSet
 from data_structure.folder import Folder
 from structured_classifier.model import Model
 from utils.utils import load_dict
-from data_structure.stats_handler import StatsHandler
+from data_structure.model_statistics import StatsHandler
 
 
 def convert_cls_to_color(cls_map, color_coding):

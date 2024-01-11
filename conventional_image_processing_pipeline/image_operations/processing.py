@@ -170,6 +170,20 @@ class TopClippingPercentile:
         return x_img
 
 
+class BottomClippingPercentile:
+    list_of_parameters = [None, 1, 5, 10, 25, 50]
+    key = "bottom_clipping_percentile"
+
+    def __init__(self, parameter):
+        self.parameter = parameter
+
+    def inference(self, x_img):
+        if self.parameter is None:
+            return x_img
+        x_img = np.clip(x_img, np.percentile(x_img, self.parameter), 1)
+        return x_img
+
+
 class BottomClipping:
     list_of_parameters = [0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9]
     key = "bottom_clipping"

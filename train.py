@@ -47,23 +47,21 @@ def main(args_):
     df = args_.dataset_folder
     mf = args_.model_folder
 
-    x = InputLayer("IN", features_to_use="gray-color", height=512, width=512)
-    x = CIPPLayer(x, "SIMPLE", operations=[
+    x = InputLayer("IN", features_to_use="gray-color", initial_down_scale=1)
+    x = CIPPLayer(x, "CIPP", operations=[
         "blurring",
+        # "top_clipping_percentile",
         "invert",
-        # "crop",
-        "detect_blob",
-        # "detect_blob",
-        # "threshold",
-        # "select_sphere",
-        # "remove_small_objects",
-        # "remove_big_objects",
-        # "select_solid",
-        # "crop",
+        # "bottom_clipping_percentile",
+        # ["negative_erode", "negative_dilate"],
+        ["watershed", "threshold_otsu", "threshold"],
+        "remove_small_holes",
+        "crop",
+        # "erode",
     ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
     model = Model(graph=x)
 
-    d_set = SegmentationDataSet(df, color_coding)
+    d_set = SegmentationDataSet(os.path.join(df, "train"), color_coding)
     tag_set = d_set.load()
     train_set, validation_set = d_set.split(tag_set, percentage=train_test_ratio, random=randomized_split)
 
@@ -71,6 +69,12 @@ def main(args_):
     # train_set = augment_data_set(train_set, augmentations, multiplier=3)
 
     model.fit(train_set[:16], validation_set)
+
+    d_set_test = SegmentationDataSet(os.path.join(df, "test"), color_coding)
+    tag_set_test = d_set_test.load()
+    test_set, _ = d_set.split(tag_set_test, percentage=train_test_ratio, random=0.0)
+
+    model.evaluate(test_set, color_coding, mf)
     model.save(mf)
     save_dict(color_coding, os.path.join(mf, "color_coding.json"))
 

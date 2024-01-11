@@ -8,7 +8,7 @@ from data_structure.segmentation_data_set import SegmentationDataSet
 from data_structure.folder import Folder
 from conventional_image_processing_pipeline.model import Model
 from utils.utils import load_dict
-from data_structure.stats_handler import StatsHandler
+from data_structure.model_statistics import StatsHandler
 
 
 def convert_cls_to_color(cls_map, color_coding, unsupervised=False):
@@ -38,33 +38,10 @@ def main(args_):
     model = Model(mf)
     model.load(mf)
 
-    res_fol = Folder(os.path.join(mf, "segmentations"))
-    res_fol.check_n_make_dir(clean=True)
-
-    vis_fol = Folder(os.path.join(mf, "overlays"))
-    vis_fol.check_n_make_dir(clean=True)
-
-    exp_fol = Folder(os.path.join(mf, "explained"))
-    exp_fol.check_n_make_dir(clean=True)
-
     d_set = SegmentationDataSet(df, color_coding)
     t_set = d_set.load()
-
-    sh = StatsHandler(color_coding)
-    print("Processing Images...")
-    for tid in tqdm(t_set):
-        cls_map = model.predict(t_set[tid].load_x())
-        explain = model.explain(t_set[tid].load_x())
-        cv2.imwrite(os.path.join(exp_fol.path(), "{}.jpg".format(tid)), explain)
-        color_map = convert_cls_to_color(cls_map, color_coding, unsupervised=us)
-        t_set[tid].write_result(res_fol.path(), color_map)
-        if not us:
-            t_set[tid].eval(color_map, sh)
-        t_set[tid].visualize_result(vis_fol.path(), color_map)
-
-    sh.eval()
-    sh.show()
-    sh.write_report(os.path.join(mf, "report.txt"))
+    tags, _ = d_set.split(t_set, 0.0)
+    model.evaluate(tags, color_coding, mf)
 
 
 def parse_args():

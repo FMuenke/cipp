@@ -1,4 +1,4 @@
-class StatsHandler:
+class ModelStatistics:
     def __init__(self, color_coding):
         self.s = {"total": {"tp": 0, "fp": 0, "fn": 0}}
         self.r = {}
