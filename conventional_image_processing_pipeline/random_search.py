@@ -19,7 +19,7 @@ def flatten_list(t):
 
 
 class RandomSearchOptimizer:
-    def __init__(self, operations, selected_layer, use_multi_processing, max_configurations=5000):
+    def __init__(self, operations, selected_layer, use_multi_processing, max_configurations=0.3):
         self.operations = operations
         self.selected_layer = selected_layer
         self.use_multi_processing = use_multi_processing
@@ -32,7 +32,7 @@ class RandomSearchOptimizer:
             for selected_index in self.selected_layer:
                 self.pipelines += [Pipeline(config, selected_index) for config in build_configs(operations)]
 
-        self.pipelines = np.random.choice(self.pipelines, size=np.min([len(self.pipelines), self.max_configs]))
+        self.pipelines = np.random.choice(self.pipelines, size=int(len(self.pipelines)*max_configurations))
         print("Evaluating - {} - Configurations".format(len(self.pipelines)))
 
     def step(self, x_img, y_img):

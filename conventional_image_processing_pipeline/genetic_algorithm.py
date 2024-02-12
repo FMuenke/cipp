@@ -63,8 +63,8 @@ class Population:
         self.use_multi_processing = use_multi_processing
         self.multiprocessing_chunk_size = 250
 
-        self.keep_percentage = 0.3
-        self.new_percentage = 0.5
+        self.keep_percentage = 0.2
+        self.new_percentage = 0.6
         self.mut_percentage = 0.2
         self.keep_at_challenge_percentage = 0.7
 
@@ -99,6 +99,7 @@ class Population:
         if not self.initially_fitted:
             self.individuals = self.score_individuals(x_img, y_img, self.individuals)
             self.initially_fitted = True
+        
         top_k = int(self.number_of_individuals * self.keep_percentage)
         new_k = int(self.number_of_individuals * self.new_percentage)
         mut_k = int(self.number_of_individuals * self.mut_percentage)
@@ -131,8 +132,8 @@ class GeneticAlgorithmOptimizer:
         self.selected_layer = selected_layer
         self.use_multi_processing = use_multi_processing
 
-        self.population_size = 2000
-        self.iter_per_image = 4
+        self.population_size = 0.075
+        self.iter_per_image = 2
 
         if type(self.selected_layer) is not list:
             self.pipelines = [Pipeline(config, self.selected_layer) for config in build_configs(operations)]
@@ -140,10 +141,10 @@ class GeneticAlgorithmOptimizer:
             self.pipelines = []
             for selected_index in self.selected_layer:
                 self.pipelines += [Pipeline(config, selected_index) for config in build_configs(operations)]
-        print("Evaluating - {} - Configurations".format(len(self.pipelines)))
+        print("Evaluating - {} - Configurations (GA)".format(len(self.pipelines)))
 
         self.population = Population(
-            min(self.population_size, len(self.pipelines)),
+            int(len(self.pipelines) * self.population_size),
             self.pipelines,
             use_multi_processing=self.use_multi_processing
         )

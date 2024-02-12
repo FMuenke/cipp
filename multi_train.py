@@ -1,5 +1,6 @@
 import argparse
 import os
+from time import time
 import numpy as np
 from tqdm import tqdm
 
@@ -14,103 +15,15 @@ from conventional_image_processing_pipeline import CIPPLayer
 from utils.utils import save_dict, load_dict
 
 
-def model_v1():
-    x = InputLayer("IN", features_to_use="RGB-color", initial_down_scale=1)
-    x = CIPPLayer(x, "SIMPLE", operations=[
-        "blurring",
-        "invert",
-        "edge",
-        "closing",
-        "erode",
-    ], selected_layer=[0, 1, 2], optimizer="grid_search", use_multiprocessing=True)
-    model = Model(graph=x)
-    return model
-
-
 def model_cipp():
-    x = InputLayer("IN", features_to_use="gray-color", width=128, height=128)
+    x = InputLayer("IN", features_to_use="gray-color", initial_down_scale=3)
     x = CIPPLayer(x, "CIPP", operations=[
         "blurring",
         "invert",
         ["threshold", "threshold_otsu", "edge"],
         "closing",
         "erode",
-    ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
-    model = Model(graph=x)
-    return model
-
-
-def model_v2():
-    x = InputLayer("IN", features_to_use="gray-color", initial_down_scale=1)
-    x = CIPPLayer(x, "SIMPLE", operations=[
-        "blurring",
-        "top_clipping_percentile",
-        "negative_closing",
-        "threshold",
-        "remove_small_objects",
-    ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
-    model = Model(graph=x)
-    return model
-
-
-def model_cipp_watershed():
-    x = InputLayer("IN", features_to_use="RGB-color", initial_down_scale=1)
-    x = CIPPLayer(x, "SIMPLE", operations=[
-        # "blurring",
-        "invert",
-        "watershed",
-        "closing",
-        "erode",
-    ], selected_layer=[0, 1, 2], optimizer="grid_search", use_multiprocessing=True)
-    model = Model(graph=x)
-    return model
-
-
-def model_crack():
-    x = InputLayer("IN", features_to_use=["gray-color"], initial_down_scale=1)
-    x = CIPPLayer(x, "SIMPLE", operations=[
-        "blurring",
-        "top_clipping",
-        "invert",
-        ["threshold", "edge"],
-        "remove_small_objects",
-    ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
-    model = Model(graph=x)
-    return model
-
-
-def model_v4():
-    x = InputLayer("IN", features_to_use=["RGB-color"], initial_down_scale=1)
-    x = CIPPLayer(x, "SIMPLE", operations=[
-        "watershed",
-        "remove_small_holes",
-        "remove_small_objects",
-    ], selected_layer=[1], optimizer="grid_search", use_multiprocessing=True)
-    model = Model(graph=x)
-    return model
-
-
-def model_spheres_v1():
-    x = InputLayer("IN", features_to_use="gray-color", height=128, width=128)
-    x = CIPPLayer(x, "SIMPLE", operations=[
-        "top_clipping",
-        "threshold",
-        "remove_small_objects",
-        "select_solid",
-        "crop",
-    ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
-    return Model(graph=x)
-
-
-def model_spheres():
-    x = InputLayer("IN", features_to_use="gray-color", height=128, width=128)
-    x = CIPPLayer(x, "SIMPLE", operations=[
-        "invert",
-        "threshold",
-        "crop",
-        "remove_small_objects",
-        "select_sphere",
-        "select_solid",
+        "remove_small_objects"
     ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
     model = Model(graph=x)
     return model
@@ -136,7 +49,8 @@ def convert_cls_to_color(cls_map, color_coding, unsupervised=False):
 def run_training(df, mf, number_of_tags):
     print(mf)
     color_coding = {
-        "ellipse": [[255, 255, 255], [255, 0, 0]],
+        "crack": [[0, 255, 0], [255, 0, 0]],
+        # "pothole": [[255, 0, 0], [255, 0, 0]],
     }
 
     randomized_split = True
@@ -150,6 +64,7 @@ def run_training(df, mf, number_of_tags):
     tag_set = d_set.load()
     # train_set, validation_set = d_set.split(tag_set, percentage=train_test_ratio, random=randomized_split)
 
+    t0 = time()
     if number_of_tags != 0:
         tags = [tag_set[t] for t in tag_set]
         half = len(tags) // 2
@@ -168,6 +83,7 @@ def run_training(df, mf, number_of_tags):
         train_set, validation_set = d_set.split(tag_set, percentage=train_test_ratio, random=randomized_split)
         model.fit(train_set, validation_set)
         model.save(mf)
+    save_dict({"train_time": time() - t0}, os.path.join(mf, "train_time_log.json"))
 
     save_dict(color_coding, os.path.join(mf, "color_coding.json"))
 
@@ -195,7 +111,8 @@ def run_test(df, mf, us):
         # t_set[tid].write_result(res_fol.path(), color_map)
         if not us:
             t_set[tid].eval(color_map, sh)
-        # t_set[tid].visualize_result(vis_fol.path(), color_map)
+        if mf.endswith("RUN-XXXX"):
+            t_set[tid].visualize_result(vis_fol.path(), color_map)
 
     sh.eval()
     sh.show()
@@ -209,8 +126,8 @@ def main(args_):
     if not os.path.isdir(mf):
         os.mkdir(mf)
 
-    number_of_images = [2, 4, 8, 16]  # , 4, 8, 16, 32, 64, 128
-    iterations = 20
+    number_of_images = [2, 4, 8, 16, 32, 64, 128]  # , 4, 8, 16, 32, 64, 128
+    iterations = 10
 
     for n in number_of_images:
         for i in range(iterations):

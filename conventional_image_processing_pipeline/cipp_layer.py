@@ -133,14 +133,16 @@ class CIPPLayer:
             x_img, _ = self.get_features(x_img)
             h_img, w_img = x_img.shape[:2]
             y_img = t.load_y([h_img, w_img])
+            y_img[y_img > 0] = 1
             optimizer.step(x_img, y_img)
 
-        # for t in validation_tags:
-        #     x_img = t.load_x()
-        #     x_img, _ = self.get_features(x_img)
-        #     h_img, w_img = x_img.shape[:2]
-        #     y_img = t.load_y([h_img, w_img])
-        #     optimizer.step_validation(x_img, y_img)
+        for t in tqdm(validation_tags):
+            x_img = t.load_x()
+            x_img, _ = self.get_features(x_img)
+            h_img, w_img = x_img.shape[:2]
+            y_img = t.load_y([h_img, w_img])
+            y_img[y_img > 0] = 1
+            optimizer.step_validation(x_img, y_img)
 
         best_pipeline, best_score = optimizer.summarize()
 

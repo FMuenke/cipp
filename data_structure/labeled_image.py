@@ -93,7 +93,7 @@ class LabeledImage:
                 c1[lbm[:, :, 1] == self.color_coding[cls][0][1]] = 1
                 c2[lbm[:, :, 2] == self.color_coding[cls][0][0]] = 1
                 c = c0 + c1 + c2
-                y_img[c == 3] = idx + 1
+                y_img[c == 3] = 1
 
         return y_img
 

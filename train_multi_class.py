@@ -12,57 +12,43 @@ from conventional_image_processing_pipeline import augment_data_set, Augmentatio
 from utils.utils import save_dict
 
 
-def model_v4():
-    x = InputLayer("IN", features_to_use=["RGB-color"], initial_down_scale=1)
-    x = CIPPLayer(x, "SIMPLE", operations=[
-        "threshold_percentile",
-        "fill_contours",
-        "closing",
-        "remove_small_objects",
-    ], selected_layer=[0, 1, 2], optimizer="grid_search", use_multiprocessing=True)
-    model = Model(graph=x)
+class MultiClassModel:
+    def __init__(self, base_model, color_coding, model_path):
+        self.color_coding = color_coding
+        self.
 
-    x = InputLayer("IN", features_to_use=["RGB-color"], initial_down_scale=1)
-    x = CIPPLayer(x, "SIMPLE", operations=[
-        "watershed",
-        "closing",
-        "opening",
-        "remove_small_objects",
-    ], selected_layer=[1], optimizer="grid_search", use_multiprocessing=True)
-    model = Model(graph=x)
-    return model
 
 
 def main(args_):
     color_coding = {
-        "crack": [[0, 255, 0], [0, 255, 0]],
-        # "pothole": [[255, 0, 0], [0, 255, 0]],
+        "crack": [[255, 255, 255], [255, 0, 0]],
+        # "shadow": [[1, 1, 1], [0, 100, 255]]
+        # "heart": [[4, 4, 4], [0, 100, 255]]
+        # "nuceli": [[255, 255, 255], [100, 100, 255]],
     }
 
     randomized_split = True
-    train_test_ratio = 0.1
+    train_test_ratio = 0.10
 
     df = args_.dataset_folder
     mf = args_.model_folder
 
-    x = InputLayer("IN", features_to_use="gray-color", width=256, height=256)
+    x = InputLayer("IN", features_to_use="gray-color", initial_down_scale=1)
     x = CIPPLayer(x, "CIPP", operations=[
         "blurring",
-        "top_clipping_percentile",
         "invert",
         ["watershed", "threshold_otsu", "threshold"],
-        "remove_small_objects",
+        "remove_small_holes",
+        "crop",
     ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
+
     model = Model(graph=x)
 
     d_set = SegmentationDataSet(os.path.join(df, "train"), color_coding)
     tag_set = d_set.load()
     train_set, validation_set = d_set.split(tag_set, percentage=train_test_ratio, random=randomized_split)
 
-    # augmentations = Augmentations(True, True, True)
-    # train_set = augment_data_set(train_set, augmentations, multiplier=3)
-
-    model.fit(train_set, validation_set)
+    model.fit(train_set[:16], validation_set)
 
     d_set_test = SegmentationDataSet(os.path.join(df, "test"), color_coding)
     tag_set_test = d_set_test.load()
