@@ -16,13 +16,12 @@ from utils.utils import save_dict, load_dict
 
 
 def model_cipp():
-    x = InputLayer("IN", features_to_use="gray-color", initial_down_scale=3)
+    x = InputLayer("IN", features_to_use="gray-color", height=256, width=256)
     x = CIPPLayer(x, "CIPP", operations=[
         "blurring",
         "invert",
         ["threshold", "threshold_otsu", "edge"],
-        "closing",
-        "erode",
+        "remove_small_holes",
         "remove_small_objects"
     ], selected_layer=[0], optimizer="grid_search", use_multiprocessing=True)
     model = Model(graph=x)
@@ -62,21 +61,17 @@ def run_training(df, mf, number_of_tags):
 
     d_set = SegmentationDataSet(df, color_coding)
     tag_set = d_set.load()
-    # train_set, validation_set = d_set.split(tag_set, percentage=train_test_ratio, random=randomized_split)
 
     t0 = time()
     if number_of_tags != 0:
         tags = [tag_set[t] for t in tag_set]
-        half = len(tags) // 2
-        train_tags = tags[:half]
-        test_tags = tags[half:]
-        print("Number of training and validation samples - {}/{}".format(len(tags), len(tags)))
         seed_id = int(mf.split("-RUN-")[-1])
         rng = np.random.default_rng(seed_id)
-        train_set = rng.choice(train_tags, number_of_tags, replace=False)
-        # number_of_tags = np.min([number_of_tags, len(tags)-1])
-        validation_set = rng.choice(test_tags, number_of_tags, replace=False)
-        print("Number of training images reduced! - {}/{} -".format(len(train_set), len(validation_set)))
+        tags = rng.choice(tags, number_of_tags, replace=False)
+        n_val = int(max(1, number_of_tags * 0.2))
+        train_set = tags[:-n_val]
+        validation_set = tags[-n_val:]
+        print("Number of Training images reduced! - {}/{} -".format(len(train_set), len(validation_set)))
         model.fit(train_set, validation_set)
         model.save(mf)
     else:
@@ -126,7 +121,7 @@ def main(args_):
     if not os.path.isdir(mf):
         os.mkdir(mf)
 
-    number_of_images = [2, 4, 8, 16, 32, 64, 128]  # , 4, 8, 16, 32, 64, 128
+    number_of_images = [2, 4, 8, 16, 32, 64, 128, 256]  # , 4, 8, 16, 32, 64, 128
     iterations = 10
 
     for n in number_of_images:
