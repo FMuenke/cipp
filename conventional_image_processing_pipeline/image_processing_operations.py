@@ -26,7 +26,6 @@ LIST_OF_OPERATIONS = [
     DetectBlob,
     Invert,
     Cropping,
-    MorphologicalClosing,
     EdgeDetector,
     FrangiFilter,
     Threshold,

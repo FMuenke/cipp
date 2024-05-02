@@ -126,9 +126,54 @@ def run_multi_training(df, mf, model, color_coding):
 
 
 
-def main(args_):
-    df = args_.dataset_folder
-    mf = args_.model_folder
+def main():
+
+    base_dir = "/Users/fmuenke/datasets/diss"
+    base_model_dir = "/Users/fmuenke/ai_models"
+
+    cc_crk = {"crack": [[0, 255, 0], [255, 0, 0]]}
+    cc_pot = {"pothole": [[255, 0, 0], [255, 0, 0]]}
+    cc_rtk = {
+        "1": [[255, 85, 0], [255, 85, 0]], 
+        "2": [[255, 170, 127], [255, 170, 127]], 
+        "3": [[255, 255, 127], [255, 255, 127]], 
+        "4": [[85, 85, 255], [85, 85, 255]], 
+        "5": [[255, 255, 255], [255, 255, 255]], 
+        "6": [[170, 0, 127], [170, 0, 127]], 
+        "7": [[85, 170, 127], [85, 170, 127]], 
+        "8": [[255, 85, 255], [255, 85, 255]], 
+        "9": [[255, 0, 0], [255, 0, 0]], 
+        "10": [[0, 0, 127], [0, 0, 127]], 
+        "11": [[170, 0, 0], [170, 0, 0]]
+    }
+
+    cc_floot = {
+        "Building-flooded": [[1, 1, 1], [255, 0, 0]],
+        "Building-non-flooded": [[2, 2, 2], [0, 255, 0]],
+        "Road-flooded": [[3, 3, 3], [0, 0, 255]],
+        "Road-non-flooded": [[4, 4, 4], [255, 255, 0]], 
+        "Water": [[5, 5, 5], [255, 0, 255]], 
+        "Tree": [[6, 6, 6], [0, 255, 255]], 
+        "Vehicle": [[7, 7, 7], [100, 100, 100]], 
+        "Pool": [[8, 8, 8], [255, 255, 255]], 
+        "Grass": [[9, 9, 9], [0, 100, 0]]
+    }
+
+    list_of_datasets = [
+        # [os.path.join(base_dir, "crack500"), cc_crk],
+        # [os.path.join(base_dir, "gaps384"), cc_crk],
+        # [os.path.join(base_dir, "pothole600"), cc_pot],
+        # [os.path.join(base_dir, "pothole-mix"), cc_crk],
+        # [os.path.join(base_dir, "pothole-mix"), cc_pot],
+        # [os.path.join(base_dir, "edmcrack600"), cc_crk],
+        # [[os.path.join(base_dir, "CPRID"), cc_crk],
+        # [[os.path.join(base_dir, "CPRID"), cc_pot],
+        # [[os.path.join(base_dir, "CNR"), cc_pot],
+        # [os.path.join(base_dir, "crack_segmentation"), cc_crk],
+        # [os.path.join(base_dir, "crack_segmentation_vialytics"), cc_crk],
+        # [os.path.join(base_dir, "RTK-street_surface_segmentation"), cc_rtk],
+        [os.path.join(base_dir, "floodnet"), cc_floot],
+    ]
 
     
 
@@ -136,33 +181,14 @@ def main(args_):
     model = model_cipp()
     ##############################
 
-    color_coding = {
-        "crack": [[0, 255, 0], [255, 0, 0]],
-        # "pothole": [[255, 0, 0], [255, 0, 0]],
-    }
+    for df, color_coding in list_of_datasets:
+        dataset_id = os.path.basename(df)
+        for cls in color_coding:
+            single_cc = {cls: color_coding[cls]}
+            mf = os.path.join(base_model_dir, f"cipp-{cls}-{dataset_id}")
+            run_multi_training(df, mf, model, single_cc)
 
-    
-
-    
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--dataset_folder",
-        "-df",
-        default="./data/train",
-        help="Path to directory with predictions",
-    )
-    parser.add_argument(
-        "--model_folder",
-        "-model",
-        default="./test",
-        help="Path to model directory"
-    )
-    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    main(args)
+    main()
